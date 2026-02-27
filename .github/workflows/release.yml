@@ -1,0 +1,180 @@
+# Automatically builds standalone binaries for all platforms and creates a
+# GitHub pre-release whenever source code changes are pushed to master.
+#
+# Triggered only by changes inside:
+#   src/  |  global.json  |  Directory.Build.props  |  *.sln
+#
+# Each run produces a release tagged  build-YYYYMMDD-<sha7>  with four
+# self-contained single-file executables attached as assets:
+#   todo-win-x64.exe  |  todo-linux-x64  |  todo-osx-x64  |  todo-osx-arm64
+#
+# Windows binary is Authenticode-signed when the two repository secrets are set:
+#   Base64_Encoded_Pfx  –  base64-encoded .pfx certificate
+#   Pfx_Key             –  .pfx password
+
+name: Release Binaries
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '**.csproj'
+      - '*.sln'
+      - 'global.json'
+      - 'Directory.Build.props'
+
+permissions:
+  contents: write   # required to create GitHub releases
+
+env:
+  PROJECT: src/CliTodoSharp/CliTodoSharp.csproj
+
+jobs:
+  # ── Build one self-contained binary per platform ──────────────────────────
+  build:
+    name: Build ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+            bin: todo.exe
+            asset: todo-win-x64.exe
+            sign: true
+          - rid: linux-x64
+            os: ubuntu-latest
+            bin: todo
+            asset: todo-linux-x64
+            sign: false
+          - rid: osx-x64
+            os: macos-latest
+            bin: todo
+            asset: todo-osx-x64
+            sign: false
+          - rid: osx-arm64
+            os: macos-latest
+            bin: todo
+            asset: todo-osx-arm64
+            sign: false
+
+    env:
+      HAS_SIGNING_CERT: ${{ secrets.Base64_Encoded_Pfx != '' }}
+      OUT: publish/${{ matrix.rid }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish ${{ matrix.rid }}
+        run: |
+          dotnet publish ${{ env.PROJECT }} \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -o ${{ env.OUT }}
+        shell: bash
+
+      # ── Windows code signing ─────────────────────────────────────────────
+      - name: Decode signing certificate
+        if: matrix.sign == true && env.HAS_SIGNING_CERT == 'true'
+        env:
+          PFX_B64: ${{ secrets.Base64_Encoded_Pfx }}
+        run: |
+          $bytes = [System.Convert]::FromBase64String($env:PFX_B64)
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\signing.pfx", $bytes)
+        shell: pwsh
+
+      - name: Sign executable
+        if: matrix.sign == true && env.HAS_SIGNING_CERT == 'true'
+        env:
+          PFX_KEY: ${{ secrets.Pfx_Key }}
+        run: |
+          $signtool = Get-ChildItem `
+            'C:\Program Files (x86)\Windows Kits\10\bin' `
+            -Recurse -Filter signtool.exe |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          & $signtool sign `
+            /fd  sha256 `
+            /td  sha256 `
+            /tr  http://timestamp.digicert.com `
+            /f   "$env:RUNNER_TEMP\signing.pfx" `
+            /p   "$env:PFX_KEY" `
+            /v   "${{ env.OUT }}\${{ matrix.bin }}"
+        shell: pwsh
+
+      - name: Remove signing certificate
+        if: matrix.sign == true && env.HAS_SIGNING_CERT == 'true'
+        run: Remove-Item -Path "$env:RUNNER_TEMP\signing.pfx" -Force
+        shell: pwsh
+
+      # ── Rename to asset name and upload ──────────────────────────────────
+      - name: Rename binary
+        run: |
+          cp ${{ env.OUT }}/${{ matrix.bin }} ${{ env.OUT }}/${{ matrix.asset }}
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ env.OUT }}/${{ matrix.asset }}
+          if-no-files-found: error
+
+  # ── Create GitHub release with all four binaries ──────────────────────────
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Compute release tag
+        id: tag
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          DATE="$(date -u +%Y%m%d)"
+          echo "value=build-${DATE}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:   ${{ steps.tag.outputs.value }}
+          name:       "Build ${{ steps.tag.outputs.value }}"
+          prerelease: true
+          body: |
+            Automated build from commit ${{ github.sha }}.
+
+            **Binaries** — self-contained, no .NET runtime required:
+
+            | File | Platform |
+            |---|---|
+            | `todo-win-x64.exe` | Windows x64 |
+            | `todo-linux-x64`   | Linux x64 |
+            | `todo-osx-x64`     | macOS Intel |
+            | `todo-osx-arm64`   | macOS Apple Silicon |
+
+            Run `chmod +x todo-*` on Linux/macOS before first use.
+          files: |
+            artifacts/todo-win-x64.exe
+            artifacts/todo-linux-x64
+            artifacts/todo-osx-x64
+            artifacts/todo-osx-arm64
