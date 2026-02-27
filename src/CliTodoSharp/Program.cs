@@ -1,9 +1,13 @@
+using System.Reflection;
+using System.Text;
 using CliTodoSharp.Commands;
 using CliTodoSharp.Infrastructure;
 using CliTodoSharp.Rendering;
 using CliTodoSharp.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console.Cli;
+
+Console.OutputEncoding = Encoding.UTF8;
 
 // ── Determine the storage path from the first pass of the args ────────────────
 // We look for "--storage <path>" manually here (before Spectre parses args) so
@@ -41,16 +45,26 @@ services.AddTransient<EditCommand>();
 services.AddTransient<ShowCommand>();
 services.AddTransient<StatsCommand>();
 services.AddTransient<PurgeCommand>();
+services.AddTransient<DescCommand>();
 
 // ── Configure and run Spectre.Console.Cli ─────────────────────────────────────
 var registrar = new TypeRegistrar(services);
 var app       = new CommandApp(registrar);
 
+// Read the version that was stamped into the assembly at publish time.
+// -p:Version=x.y.z is passed by the release workflow so this always matches
+// the release tag.  Falls back to the csproj <Version> in local builds.
+var appVersion = typeof(Program).Assembly
+    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+    ?.InformationalVersion
+    .Split('+')[0]   // strip deterministic-build git hash suffix if present
+    ?? "unknown";
+
 app.Configure(config =>
 {
     // Application-level metadata shown in the help text.
     config.SetApplicationName("todo");
-    config.SetApplicationVersion("1.0.0");
+    config.SetApplicationVersion(appVersion);
 
     // Propagate exceptions so that the process exits with code 1 on errors.
     // In production you'd set this only in debug builds; here we surface
@@ -98,6 +112,11 @@ app.Configure(config =>
     config.AddCommand<EditCommand>("edit")
           .WithDescription("Edit task fields.")
           .WithExample("todo", "edit", "1", "--title", "\"New title\"", "--priority", "critical");
+
+    config.AddCommand<DescCommand>("desc")
+          .WithDescription("View or set the description of a task.")
+          .WithExample("todo", "desc", "1", "\"Detailed notes here...\"")
+          .WithExample("todo", "desc", "1", "--clear");
 
     config.AddCommand<StatsCommand>("stats")
           .WithDescription("Show task statistics with progress bars.");

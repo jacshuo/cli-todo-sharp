@@ -136,6 +136,7 @@ public sealed class TaskManager(ITaskStorageService storage)
         int displayIndex,
         string? newTitle = null,
         string? newDescription = null,
+        bool clearDescription = false,
         TaskPriority? newPriority = null,
         DateTime? newDueDate = null,
         bool clearDueDate = false,
@@ -147,7 +148,8 @@ public sealed class TaskManager(ITaskStorageService storage)
                         $"No task with index #{displayIndex}.");
 
         if (newTitle is not null)       task.Title       = newTitle.Trim();
-        if (newDescription is not null) task.Description = newDescription.Trim();
+        if (clearDescription)           task.Description = null;
+        else if (newDescription is not null) task.Description = newDescription.Trim();
         if (newPriority.HasValue)       task.Priority    = newPriority.Value;
         if (clearDueDate)               task.DueDate     = null;
         else if (newDueDate.HasValue)   task.DueDate     = newDueDate.Value;

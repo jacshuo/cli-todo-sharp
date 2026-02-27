@@ -76,7 +76,10 @@ public sealed class TodoTask
     [JsonIgnore]
     public bool IsOverdue =>
         DueDate.HasValue
-        && DueDate.Value < DateTime.UtcNow
+        // A task is only overdue once the entire due-date day has passed in
+        // local time. Comparing just the Date portion means a task due "today"
+        // is never overdue until tomorrow begins, regardless of the hour.
+        && DueDate.Value.ToLocalTime().Date < DateTime.Now.Date
         && Status is TodoStatus.Pending or TodoStatus.InProgress;
 
     /// <summary>

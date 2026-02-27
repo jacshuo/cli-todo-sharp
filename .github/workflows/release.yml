@@ -1,11 +1,18 @@
-# Automatically builds standalone binaries for all platforms and creates a
-# GitHub pre-release whenever source code changes are pushed to master.
+# Builds standalone binaries for all platforms and creates a GitHub release.
 #
-# Triggered only by changes inside:
-#   src/  |  global.json  |  Directory.Build.props  |  *.sln
+# ── Trigger modes ────────────────────────────────────────────────────────────
 #
-# Each run produces a release tagged  build-YYYYMMDD-<sha7>  with four
-# self-contained single-file executables attached as assets:
+# 1. workflow_dispatch – manual run from the GitHub Actions UI.
+#      version input filled in  (e.g. "1.1.0" or "v1.1.0")
+#        → tag: v1.1.0 | proper release | notes from CHANGELOG.md [1.1.0] section
+#      version input left blank
+#        → tag: top versioned entry in CHANGELOG.md (first ## [x.y.z] block)
+#           proper release | notes from that CHANGELOG.md section
+#
+# 2. push to master  (source changes only)
+#        → tag: build-YYYYMMDD-<sha7> | pre-release | generic commit body
+#
+# ── Assets ───────────────────────────────────────────────────────────────────
 #   todo-win-x64.exe  |  todo-linux-x64  |  todo-osx-x64  |  todo-osx-arm64
 #
 # Windows binary is Authenticode-signed when the two repository secrets are set:
@@ -15,7 +22,14 @@
 name: Release Binaries
 
 on:
-  workflow_dispatch:   # allows manual trigger from GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      version:
+        description: >
+          Release version, e.g. "1.1.0" or "v1.1.0".
+          Leave blank to auto-detect from the top versioned entry in CHANGELOG.md.
+        required: false
+        default: ''
   push:
     branches: [ "master" ]
     paths:
@@ -33,9 +47,60 @@ env:
   PROJECT: src/CliTodoSharp/CliTodoSharp.csproj
 
 jobs:
-  # ── Build one self-contained binary per platform ──────────────────────────
+  # ── Resolve version / tag / release-type before the matrix build starts ───
+  # Outputs are consumed by both the build and release jobs so the version
+  # string is embedded in every binary AND used as the GitHub release tag.
+  prepare:
+    name: Resolve release metadata
+    runs-on: ubuntu-latest
+    outputs:
+      tag:          ${{ steps.meta.outputs.tag }}
+      version:      ${{ steps.meta.outputs.version }}
+      prerelease:   ${{ steps.meta.outputs.prerelease }}
+      release_name: ${{ steps.meta.outputs.release_name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve metadata
+        id: meta
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # CI push ─ build-date-sha pre-release
+            SHORT_SHA="${GITHUB_SHA:0:7}"
+            DATE="$(date -u +%Y%m%d)"
+            TAG="build-${DATE}-${SHORT_SHA}"
+            # Use a valid SemVer pre-release string so MSBuild accepts it
+            VERSION="0.0.0-build.${DATE}.${SHORT_SHA}"
+            echo "tag=${TAG}"                    >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}"            >> "$GITHUB_OUTPUT"
+            echo "prerelease=true"               >> "$GITHUB_OUTPUT"
+            echo "release_name=Build ${TAG}"     >> "$GITHUB_OUTPUT"
+          else
+            INPUT="${{ inputs.version }}"
+            if [[ -n "$INPUT" ]]; then
+              VERSION="${INPUT#v}"
+            else
+              VERSION=$(grep '^## \[' CHANGELOG.md \
+                          | grep -v '\[Unreleased\]' \
+                          | head -1 \
+                          | sed 's/## \[\([^]]*\)\].*/\1/')
+            fi
+            if [[ -z "$VERSION" ]]; then
+              echo "::error::Could not determine version. Add a versioned section to CHANGELOG.md or supply the version input."
+              exit 1
+            fi
+            echo "tag=v${VERSION}"              >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}"           >> "$GITHUB_OUTPUT"
+            echo "prerelease=false"             >> "$GITHUB_OUTPUT"
+            echo "release_name=v${VERSION}"     >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── Build one self-contained binary per platform ───────────────────────
   build:
     name: Build ${{ matrix.rid }}
+    needs: prepare
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -84,6 +149,7 @@ jobs:
             --self-contained true \
             -p:PublishSingleFile=true \
             -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:Version=${{ needs.prepare.outputs.version }} \
             -o ${{ env.OUT }}
         shell: bash
 
@@ -138,42 +204,63 @@ jobs:
   # ── Create GitHub release with all four binaries ──────────────────────────
   release:
     name: Create Release
-    needs: build
+    needs: [prepare, build]
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout (needed for CHANGELOG extraction)
+        uses: actions/checkout@v4
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
 
-      - name: Compute release tag
-        id: tag
+      # ── Build release body ────────────────────────────────────────────────
+      # Versioned releases: extract the matching section from CHANGELOG.md.
+      # Build tags: emit a generic commit-based message.
+      - name: Build release notes
         run: |
-          SHORT_SHA="${GITHUB_SHA:0:7}"
-          DATE="$(date -u +%Y%m%d)"
-          echo "value=build-${DATE}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          VERSION="${{ needs.prepare.outputs.version }}"
+          PRERELEASE="${{ needs.prepare.outputs.prerelease }}"
 
+          if [[ "$PRERELEASE" == "false" ]]; then
+            # Extract lines between  ## [VERSION]  and the next  ## [  heading.
+            awk "/^## \[${VERSION}\]/{found=1; next} \
+                 found && /^## \[/{exit} \
+                 found{print}" CHANGELOG.md \
+              | sed '/^[[:space:]]*$/d;/^---$/d' \
+              > release_notes.md
+
+            if [[ ! -s release_notes.md ]]; then
+              echo "Release v${VERSION}." > release_notes.md
+            fi
+          else
+            cat > release_notes.md << 'EOF'
+          Automated build from commit ${{ github.sha }}.
+
+          **Binaries** — self-contained, no .NET runtime required:
+
+          | File | Platform |
+          |---|---|
+          | `todo-win-x64.exe` | Windows x64 |
+          | `todo-linux-x64`   | Linux x64 |
+          | `todo-osx-x64`     | macOS Intel |
+          | `todo-osx-arm64`   | macOS Apple Silicon |
+
+          Run `chmod +x todo-*` on Linux/macOS before first use.
+          EOF
+          fi
+
+      # ── Publish the release ───────────────────────────────────────────────
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name:   ${{ steps.tag.outputs.value }}
-          name:       "Build ${{ steps.tag.outputs.value }}"
-          prerelease: true
-          body: |
-            Automated build from commit ${{ github.sha }}.
-
-            **Binaries** — self-contained, no .NET runtime required:
-
-            | File | Platform |
-            |---|---|
-            | `todo-win-x64.exe` | Windows x64 |
-            | `todo-linux-x64`   | Linux x64 |
-            | `todo-osx-x64`     | macOS Intel |
-            | `todo-osx-arm64`   | macOS Apple Silicon |
-
-            Run `chmod +x todo-*` on Linux/macOS before first use.
+          tag_name:   ${{ needs.prepare.outputs.tag }}
+          name:       ${{ needs.prepare.outputs.release_name }}
+          prerelease: ${{ needs.prepare.outputs.prerelease }}
+          body_path:  release_notes.md
           files: |
             artifacts/todo-win-x64.exe
             artifacts/todo-linux-x64

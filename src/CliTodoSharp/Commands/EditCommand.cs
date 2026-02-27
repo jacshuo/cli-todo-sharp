@@ -44,6 +44,11 @@ public sealed class EditCommand(TaskManager manager) : AsyncCommand<EditCommand.
         [DefaultValue(false)]
         public bool ClearDue { get; set; }
 
+        [CommandOption("--clear-description")]
+        [Description("Remove the description entirely.")]
+        [DefaultValue(false)]
+        public bool ClearDescription { get; set; }
+
         [CommandOption("-t|--tags <TAGS>")]
         [Description("Replace all tags with this comma-separated list.")]
         public string? Tags { get; set; }
@@ -86,10 +91,10 @@ public sealed class EditCommand(TaskManager manager) : AsyncCommand<EditCommand.
         // ── Check at least one field is being changed ──────────────────────────
         if (settings.Title is null && settings.Description is null
             && priority is null && dueDate is null
-            && !settings.ClearDue && tags is null)
+            && !settings.ClearDue && !settings.ClearDescription && tags is null)
         {
             TaskRenderer.Warn("No fields to update. " +
-                "Supply at least one of --title, --description, --priority, --due, --clear-due, --tags.");
+                "Supply at least one of --title, --description, --clear-description, --priority, --due, --clear-due, --tags.");
             return 0;
         }
 
@@ -97,12 +102,13 @@ public sealed class EditCommand(TaskManager manager) : AsyncCommand<EditCommand.
         {
             var task = await manager.EditAsync(
                 settings.Index,
-                newTitle:       settings.Title,
-                newDescription: settings.Description,
-                newPriority:    priority,
-                newDueDate:     dueDate,
-                clearDueDate:   settings.ClearDue,
-                newTags:        tags);
+                newTitle:          settings.Title,
+                newDescription:    settings.Description,
+                clearDescription:  settings.ClearDescription,
+                newPriority:       priority,
+                newDueDate:        dueDate,
+                clearDueDate:      settings.ClearDue,
+                newTags:           tags);
 
             TaskRenderer.Success($"Task [bold]#{task.DisplayIndex}[/] updated.");
             TaskRenderer.RenderTaskDetail(task);
