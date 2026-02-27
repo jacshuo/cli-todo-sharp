@@ -1,0 +1,182 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+
+    // ── Build ──────────────────────────────────────────────────────────────────
+
+    {
+      // Used automatically by every F5 launch configuration as preLaunchTask.
+      "label": "build (Debug)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/CliTodoSharp/CliTodoSharp.csproj",
+        "--configuration", "Debug",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build (Release)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/CliTodoSharp/CliTodoSharp.csproj",
+        "--configuration", "Release",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+
+    // ── Publish – per platform ─────────────────────────────────────────────────
+    //
+    // Each publish task produces a self-contained, single-file executable.
+    //
+    // Flags explained:
+    //   --self-contained true          Bundle the .NET runtime; no SDK needed on
+    //                                  the target machine.
+    //   -p:PublishSingleFile=true      Merge all assemblies into one binary.
+    //   -p:PublishTrimmed=true         IL-trim unused code to reduce file size
+    //                                  (safe for this app – no reflection magic).
+    //   -p:DebugType=none              Strip PDB data from the output binary.
+    //   -p:DebugSymbols=false          Ditto (belt-and-suspenders).
+    //   --output                       Separate folder per platform so outputs
+    //                                  don't overwrite each other.
+
+    {
+      "label": "publish – win-x64",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "${workspaceFolder}/src/CliTodoSharp/CliTodoSharp.csproj",
+        "--configuration", "Release",
+        "--runtime", "win-x64",
+        "--self-contained", "true",
+        "-p:PublishSingleFile=true",
+        "-p:PublishTrimmed=true",
+        "-p:DebugType=none",
+        "-p:DebugSymbols=false",
+        "--output", "${workspaceFolder}/publish/win-x64"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish – linux-x64",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "${workspaceFolder}/src/CliTodoSharp/CliTodoSharp.csproj",
+        "--configuration", "Release",
+        "--runtime", "linux-x64",
+        "--self-contained", "true",
+        "-p:PublishSingleFile=true",
+        "-p:PublishTrimmed=true",
+        "-p:DebugType=none",
+        "-p:DebugSymbols=false",
+        "--output", "${workspaceFolder}/publish/linux-x64"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish – osx-x64",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "${workspaceFolder}/src/CliTodoSharp/CliTodoSharp.csproj",
+        "--configuration", "Release",
+        "--runtime", "osx-x64",
+        "--self-contained", "true",
+        "-p:PublishSingleFile=true",
+        "-p:PublishTrimmed=true",
+        "-p:DebugType=none",
+        "-p:DebugSymbols=false",
+        "--output", "${workspaceFolder}/publish/osx-x64"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish – osx-arm64",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "${workspaceFolder}/src/CliTodoSharp/CliTodoSharp.csproj",
+        "--configuration", "Release",
+        "--runtime", "osx-arm64",
+        "--self-contained", "true",
+        "-p:PublishSingleFile=true",
+        "-p:PublishTrimmed=true",
+        "-p:DebugType=none",
+        "-p:DebugSymbols=false",
+        "--output", "${workspaceFolder}/publish/osx-arm64"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      // Compound task – runs all four publish tasks sequentially.
+      // VS Code executes dependsOn tasks before this shell no-op.
+      "label": "publish – all platforms",
+      "type": "shell",
+      "command": "echo",
+      "args": ["All platform binaries published to ./publish/"],
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "publish – win-x64",
+        "publish – linux-x64",
+        "publish – osx-x64",
+        "publish – osx-arm64"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+
+  ]
+}

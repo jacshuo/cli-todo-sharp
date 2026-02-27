@@ -1,0 +1,26 @@
+## .NET build outputs
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+## Publish outputs
+publish/
+
+## NuGet
+*.nupkg
+*.nuget.props
+*.nuget.targets
+project.lock.json
+packages/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Rider / JetBrains
+.idea/
+
+## VS Code
+

@@ -1,0 +1,322 @@
+{
+  // VS Code launch configurations for cli-todo-sharp
+  // Each entry corresponds to one CLI command / common usage scenario.
+  //
+  // Usage:
+  //   1. Open the Run & Debug panel  (Ctrl+Shift+D)
+  //   2. Pick a configuration from the drop-down
+  //   3. Press F5 – the project is compiled automatically before launch
+  //
+  // Customise "args" in any entry to pass different values without creating
+  // a new configuration.  String arguments that contain spaces must be
+  // separate array elements (do NOT quote them as one element).
+  //
+  // The "stopAtEntry" flag is false everywhere so execution starts immediately;
+  // set it to true on an individual config if you want to break on the very
+  // first instruction before any output appears.
+
+  "version": "0.2.0",
+  "configurations": [
+
+    // ── add ───────────────────────────────────────────────────────────────────
+
+    {
+      "name": "add – interactive (no title arg)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      // Omitting the title argument causes the TextPrompt to appear in the
+      // integrated terminal, letting you type a title interactively.
+      "args": ["add"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "add – with title & options",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": [
+        "add", "Debug this task",
+        "--priority", "high",
+        "--due", "2026-03-31",
+        "--tags", "work,debug",
+        "--description", "Added via VS Code launch config"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── list / ls ─────────────────────────────────────────────────────────────
+
+    {
+      "name": "list – all tasks",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["list"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "list – overdue only",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["list", "--status", "overdue"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "list – pending, sorted by priority",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["list", "--status", "pending", "--sort", "priority"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "list – filter by tag",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      // Change "work" to whichever tag you want to filter on.
+      "args": ["list", "--tag", "work"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "list – detail view",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["list", "--detail"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "list – sorted by due date",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["list", "--sort", "due"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── show ──────────────────────────────────────────────────────────────────
+
+    {
+      "name": "show – task #1",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      // Change "1" to the display index you want to inspect.
+      "args": ["show", "1"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── start ─────────────────────────────────────────────────────────────────
+
+    {
+      "name": "start – task #1",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["start", "1"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── done ──────────────────────────────────────────────────────────────────
+
+    {
+      "name": "done – task #1",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["done", "1"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── cancel ────────────────────────────────────────────────────────────────
+
+    {
+      "name": "cancel – task #1",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["cancel", "1"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── reopen ────────────────────────────────────────────────────────────────
+
+    {
+      "name": "reopen – task #1",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["reopen", "1"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── edit ──────────────────────────────────────────────────────────────────
+
+    {
+      "name": "edit – change title & priority",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["edit", "1", "--title", "Updated via debugger", "--priority", "critical"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "edit – set due date",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["edit", "1", "--due", "2026-04-01"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "edit – clear due date",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["edit", "1", "--clear-due"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "edit – replace tags",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["edit", "1", "--tags", "personal,urgent"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── remove ────────────────────────────────────────────────────────────────
+
+    {
+      "name": "remove – task #1 (with confirmation prompt)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      // No --yes flag: the confirmation prompt will appear in the terminal.
+      "args": ["remove", "1"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "remove – task #1 (skip confirmation)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["remove", "1", "--yes"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── stats ─────────────────────────────────────────────────────────────────
+
+    {
+      "name": "stats",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["stats"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── purge ─────────────────────────────────────────────────────────────────
+
+    {
+      "name": "purge – with confirmation prompt",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["purge"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "purge – skip confirmation",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      "args": ["purge", "--yes"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+
+    // ── portable storage override example ─────────────────────────────────────
+
+    {
+      "name": "list – from custom storage file",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build (Debug)",
+      "program": "${workspaceFolder}/src/CliTodoSharp/bin/Debug/net10.0/todo.dll",
+      // Point --storage at any JSON file to debug cross-file portability.
+      "args": ["list", "--storage", "${workspaceFolder}/sample-tasks.json"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    }
+  ]
+}
