@@ -15,6 +15,7 @@
 name: Release Binaries
 
 on:
+  workflow_dispatch:   # allows manual trigger from GitHub Actions UI
   push:
     branches: [ "master" ]
     paths:
