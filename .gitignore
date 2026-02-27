@@ -22,6 +22,10 @@ TestResults/
 *.coveragexml
 coverage*/
 
+## Certificates & secrets — never commit these
+*.pfx
+*.p12
+
 ## OS
 .DS_Store
 Thumbs.db

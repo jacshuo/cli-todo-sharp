@@ -1,0 +1,131 @@
+# Windows build, test, publish, and code-sign workflow for cli-todo-sharp.
+#
+# SETUP REQUIRED – add these two secrets to your GitHub repository
+# (Settings → Secrets and variables → Actions → New repository secret):
+#
+#   Base64_Encoded_Pfx   – Base64-encoded contents of your code-signing .pfx file.
+#                          Generate with PowerShell:
+#                            $pfx = Get-Content '.\MyCert.pfx' -AsByteStream
+#                            [System.Convert]::ToBase64String($pfx) | Set-Clipboard
+#                          Paste the clipboard output as the secret value.
+#
+#   Pfx_Key              – The password you set when exporting the .pfx.
+#
+# The signing step only runs for the Release configuration.
+# If you don't have a code-signing certificate yet, the workflow still builds and
+# tests successfully – the signing and publish-artifact steps are skipped when the
+# secrets are absent.
+
+name: .NET Desktop (Windows)
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  Solution_Name:    cli-todo-sharp.sln
+  Test_Project:     tests\CliTodoSharp.Tests\CliTodoSharp.Tests.csproj
+  Publish_Dir:      publish\win-x64
+  Exe_Name:         todo.exe             # AssemblyName defined in CliTodoSharp.csproj
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+
+    runs-on: windows-latest
+
+    env:
+      # Exposes whether the signing secret is configured so we can reference
+      # it safely in `if` conditions (secrets context is not allowed there).
+      HAS_SIGNING_CERT: ${{ secrets.Base64_Encoded_Pfx != '' }}
+
+    steps:
+      # ── Source ────────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── SDK ───────────────────────────────────────────────────────────────────
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # Reads the version from global.json automatically when dotnet-version
+          # is omitted, but we pin explicitly to match global.json.
+          dotnet-version: '10.0.x'
+
+      # ── Restore ───────────────────────────────────────────────────────────────
+      - name: Restore dependencies
+        run: dotnet restore $env:Solution_Name
+
+      # ── Build ─────────────────────────────────────────────────────────────────
+      - name: Build
+        run: dotnet build $env:Solution_Name --no-restore -c ${{ matrix.configuration }}
+
+      # ── Test ──────────────────────────────────────────────────────────────────
+      - name: Test
+        run: dotnet test $env:Test_Project --no-build -c ${{ matrix.configuration }} --verbosity normal
+
+      # ── Publish (Release only) ────────────────────────────────────────────────
+      - name: Publish win-x64
+        if: matrix.configuration == 'Release'
+        run: |
+          dotnet publish src\CliTodoSharp\CliTodoSharp.csproj `
+            -c Release -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o $env:Publish_Dir
+
+      # ── Code signing (Release only) ───────────────────────────────────────────
+      #
+      # Decode the PFX secret, sign the executable, then delete the certificate
+      # file so it is never left on the runner or included in artifacts.
+      #
+      # signtool.exe is available on windows-latest via the Windows SDK.
+      # The /fd sha256 /td sha256 /tr flags produce a dual-signed, timestamped
+      # authenticode signature compatible with modern Windows SmartScreen.
+
+      - name: Decode signing certificate
+        if: matrix.configuration == 'Release' && env.HAS_SIGNING_CERT == 'true'
+        env:
+          PFX_B64: ${{ secrets.Base64_Encoded_Pfx }}
+        run: |
+          $bytes = [System.Convert]::FromBase64String($env:PFX_B64)
+          [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\signing.pfx", $bytes)
+
+      - name: Sign executable
+        if: matrix.configuration == 'Release' && env.HAS_SIGNING_CERT == 'true'
+        env:
+          PFX_KEY: ${{ secrets.Pfx_Key }}
+        run: |
+          $signtool = Get-ChildItem `
+            'C:\Program Files (x86)\Windows Kits\10\bin' `
+            -Recurse -Filter signtool.exe |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          & $signtool sign `
+            /fd  sha256 `
+            /td  sha256 `
+            /tr  http://timestamp.digicert.com `
+            /f   "$env:RUNNER_TEMP\signing.pfx" `
+            /p   "$env:PFX_KEY" `
+            /v   "$env:Publish_Dir\$env:Exe_Name"
+
+      - name: Remove signing certificate
+        if: matrix.configuration == 'Release' && env.HAS_SIGNING_CERT == 'true'
+        run: Remove-Item -Path "$env:RUNNER_TEMP\signing.pfx" -Force
+
+      # ── Upload artifact (Release only) ────────────────────────────────────────
+      - name: Upload win-x64 artifact
+        if: matrix.configuration == 'Release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: todo-win-x64
+          path: ${{ env.Publish_Dir }}\${{ env.Exe_Name }}
+          if-no-files-found: error
