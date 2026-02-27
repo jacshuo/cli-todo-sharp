@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <!--
+      Prevent the test runner from inheriting PublishSingleFile / SelfContained
+      settings that only make sense for the main executable project.
+    -->
+    <PublishSingleFile>false</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- xUnit v2 test framework -->
+    <PackageReference Include="xunit"                          Version="2.9.*" />
+    <PackageReference Include="xunit.runner.visualstudio"      Version="2.8.*">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk"         Version="17.*" />
+
+    <!-- FluentAssertions for readable assertion syntax -->
+    <PackageReference Include="FluentAssertions"               Version="6.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Reference the main project directly.
+      OutputType=Exe projects are fully referenceable in .NET –
+      all public types are accessible to the test assembly.
+    -->
+    <ProjectReference Include="..\..\src\CliTodoSharp\CliTodoSharp.csproj" />
+  </ItemGroup>
+
+</Project>

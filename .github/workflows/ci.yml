@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: true
+  # Treat all compiler warnings as errors during CI builds (mirrors
+  # the TreatWarningsAsErrors flag in Directory.Build.props).
+  CI_BUILD: true
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # Reads the version from global.json automatically.
+          global-json-file: global.json
+
+      - name: Restore dependencies
+        run: dotnet restore cli-todo-sharp.sln
+
+      - name: Build (Release)
+        run: dotnet build cli-todo-sharp.sln --configuration Release --no-restore
+
+      - name: Test
+        run: >
+          dotnet test cli-todo-sharp.sln
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --logger "trx;LogFileName=test-results.trx"
+          --collect:"XPlat Code Coverage"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: "**/TestResults/**"
+          retention-days: 7
+
+  publish:
+    name: Publish binaries
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # Only run on pushes to main (not on PRs) to avoid unnecessary builds.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    strategy:
+      matrix:
+        rid:
+          - win-x64
+          - linux-x64
+          - osx-x64
+          - osx-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Publish (${{ matrix.rid }})
+        run: >
+          dotnet publish src/CliTodoSharp/CliTodoSharp.csproj
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:PublishTrimmed=true
+          -p:DebugType=none
+          -p:DebugSymbols=false
+          --output publish/${{ matrix.rid }}
+
+      - name: Upload artifact (${{ matrix.rid }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: todo-${{ matrix.rid }}
+          path: publish/${{ matrix.rid }}/
+          retention-days: 30

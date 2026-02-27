@@ -1,0 +1,30 @@
+<Project>
+  <!--
+    Directory.Build.props is automatically imported by MSBuild for every
+    project under this directory.  Centralising these settings here means
+    they only need to be set once rather than repeated in every .csproj.
+  -->
+  <PropertyGroup>
+    <!-- Language / compiler -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!--
+      Treat all warnings as errors in CI (where the CI_BUILD env var is set).
+      Locally they remain warnings so contributors aren't blocked during
+      day-to-day development.
+    -->
+    <TreatWarningsAsErrors Condition="'$(CI_BUILD)' == 'true'">true</TreatWarningsAsErrors>
+
+    <!-- Package metadata (used if any project is ever published to NuGet) -->
+    <Authors>cli-todo-sharp contributors</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/jacshuo/cli-todo-sharp</RepositoryUrl>
+    <PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+
+    <!-- Deterministic builds: embed source paths relative to the repo root -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

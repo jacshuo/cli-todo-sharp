@@ -1,0 +1,9 @@
+{
+  // Pins the .NET SDK version used by everyone on the project,
+  // preventing "works on my machine" issues caused by SDK differences.
+  // Update this to the latest patch when you upgrade.
+  "sdk": {
+    "version": "10.0.100",
+    "rollForward": "latestPatch"
+  }
+}

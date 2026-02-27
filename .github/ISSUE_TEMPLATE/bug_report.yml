@@ -1,0 +1,82 @@
+name: Bug Report
+description: Report a bug or unexpected behaviour
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!  
+        Please fill in as much detail as possible so we can reproduce and fix it quickly.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: "When I run `todo list --status overdue`, it crashes with …"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands or steps to trigger the bug.
+      placeholder: |
+        1. `todo add "Test" --due 2020-01-01`
+        2. `todo list`
+        3. Observe error …
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: "I expected to see the task listed as Overdue."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour / error output
+      description: Paste the full terminal output or error message.
+      render: shell
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS (Intel x64)
+        - macOS (Apple Silicon arm64)
+        - Linux x64
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: cli-todo-sharp version
+      description: "`todo --version` output"
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: dotnet
+    attributes:
+      label: .NET version
+      description: "`dotnet --version` output (if running from source)"
+      placeholder: "10.0.100"
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Anything else that might help (logs, screenshots, the tasks.json file, …).

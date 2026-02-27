@@ -1,5 +1,9 @@
 # cli-todo-sharp
 
+[![CI](https://github.com/jacshuo/cli-todo-sharp/actions/workflows/ci.yml/badge.svg)](https://github.com/jacshuo/cli-todo-sharp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com)
+
 A feature-rich, cross-platform CLI task/to-do manager written in **C# (.NET 10)**.  
 Rich terminal UI powered by [Spectre.Console](https://spectreconsole.net) — coloured tables, progress bars, status badges, interactive prompts, and more.
 
@@ -32,6 +36,8 @@ Showing 3 of 3 task(s)  ·  ✓ 1 done  ·  ⚠ 1 overdue
 10. [Portable Usage](#portable-usage)
 11. [Third-party Packages](#third-party-packages)
 12. [Key Design Decisions](#key-design-decisions)
+13. [Contributing](#contributing)
+14. [License](#license)
 
 ---
 
@@ -91,6 +97,32 @@ cli-todo-sharp/
 │       └── Infrastructure/
 │           └── TypeRegistrar.cs         # ITypeRegistrar/ITypeResolver for DI bridge
 │
+├── tests/
+│   └── CliTodoSharp.Tests/
+│       ├── CliTodoSharp.Tests.csproj    # xUnit + FluentAssertions test project
+│       ├── InMemoryTaskStorage.cs       # ITaskStorageService stub for unit tests
+│       ├── TaskManagerTests.cs          # 18 TaskManager unit tests
+│       └── JsonTaskStorageServiceTests.cs # 7 JSON storage integration tests
+│
+├── .github/
+│   ├── workflows/
+│   │   └── ci.yml                       # CI: build + test on Ubuntu/Windows/macOS
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.yml
+│   │   └── feature_request.yml
+│   └── PULL_REQUEST_TEMPLATE.md
+│
+├── .vscode/
+│   ├── launch.json                      # 24 debug configurations
+│   └── tasks.json                       # Build (Debug/Release) + publish tasks
+│
+├── cli-todo-sharp.sln                   # Solution file
+├── global.json                          # Pins .NET SDK version
+├── Directory.Build.props                # Shared MSBuild properties
+├── .editorconfig                        # C# code-style rules
+├── LICENSE                              # MIT
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
 └── README.md
 ```
 
@@ -157,7 +189,7 @@ dotnet --version
 ### Development (run from source)
 
 ```bash
-git clone https://github.com/your-org/cli-todo-sharp.git
+git clone https://github.com/jacshuo/cli-todo-sharp.git
 cd cli-todo-sharp/src/CliTodoSharp
 dotnet run -- <command> [options]
 ```
@@ -167,6 +199,14 @@ dotnet run -- <command> [options]
 ```bash
 dotnet build -c Release
 ./bin/Release/net10.0/todo --help
+```
+
+### Run tests
+
+```bash
+dotnet test cli-todo-sharp.sln
+# or with verbosity:
+dotnet test cli-todo-sharp.sln --verbosity normal
 ```
 
 ### Publish as a self-contained single file
@@ -469,3 +509,22 @@ C# 12 / .NET 8+ primary constructors reduce boilerplate DI plumbing without any 
 
 ### Why Microsoft.Extensions.DependencyInjection?
 Spectre.Console.Cli has its own resolver interface but no built-in IOC container.  Implementing the two-interface bridge (`TypeRegistrar` / `TypeResolver`) against the standard .NET DI container means all normal patterns (scoped services, factory registrations, etc.) work without coupling to a third-party container.
+
+---
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
+
+- Setting up the development environment
+- Branch and commit conventions (Conventional Commits)
+- How to add tests and run them locally
+- The pull-request process
+
+Please also review our [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+
+---
+
+## License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.

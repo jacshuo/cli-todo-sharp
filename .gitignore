@@ -15,12 +15,26 @@ publish/
 project.lock.json
 packages/
 
+## Test results and code coverage
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage*/
+
 ## OS
 .DS_Store
 Thumbs.db
+*~
 
 ## Rider / JetBrains
 .idea/
+*.sln.iml
 
-## VS Code
+## VS Code (keep the team-shared settings)
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
 
