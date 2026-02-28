@@ -9,12 +9,32 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>false</SelfContained>
-    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
+    <!--
+      PublishSingleFile, SelfContained, and RuntimeIdentifiers are intentionally
+      omitted here.  They are supplied explicitly via -p: / -r on every
+      'dotnet publish' call (both in CI/release workflows and the local VS Code
+      publish tasks), so they never interfere with 'dotnet build' or 'dotnet pack'.
+    -->
     <Version>1.0.0</Version>
     <Description>A feature-rich CLI task/to-do manager with rich terminal UI</Description>
+
+    <!-- NuGet / dotnet-tool packaging -->
+    <PackageId>CliTodoSharp</PackageId>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>todo</ToolCommandName>
+    <PackageTags>todo;cli;task-manager;productivity</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!--
+      Produce a .nupkg on every 'dotnet build' so the package is always
+      available alongside the regular build output.
+    -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <!-- Include the repo README as the NuGet package readme -->
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <!--

@@ -211,6 +211,11 @@ jobs:
       - name: Checkout (needed for CHANGELOG extraction)
         uses: actions/checkout@v4
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -252,6 +257,21 @@ jobs:
           Run `chmod +x todo-*` on Linux/macOS before first use.
           EOF
           fi
+
+      # ── Pack NuGet and push ───────────────────────────────────────────────
+      - name: Pack NuGet
+        run: >
+          dotnet pack src/CliTodoSharp/CliTodoSharp.csproj
+          --configuration Release
+          -p:Version=${{ needs.prepare.outputs.version }}
+          --output nupkgs
+
+      - name: Push to NuGet
+        run: >
+          dotnet nuget push "nupkgs/*.nupkg"
+          --api-key ${{ secrets.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
 
       # ── Publish the release ───────────────────────────────────────────────
       - name: Create GitHub release

@@ -97,3 +97,44 @@ jobs:
           name: todo-${{ matrix.rid }}
           path: publish/${{ matrix.rid }}/
           retention-days: 30
+
+  nuget-push:
+    name: Pack & Push NuGet (pre-release)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # Only push packages on branch pushes, not on pull requests.
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Resolve pre-release version
+        id: ver
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          DATE="$(date -u +%Y%m%d)"
+          # Extract the base <Version> from the csproj and strip any existing pre-release suffix.
+          BASE=$(grep -oPm1 '(?<=<Version>)[^<]+' src/CliTodoSharp/CliTodoSharp.csproj || echo "1.0.0")
+          BASE="${BASE%%-*}"
+          VERSION="${BASE}-ci.${DATE}.${SHORT_SHA}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Pack
+        run: >
+          dotnet pack src/CliTodoSharp/CliTodoSharp.csproj
+          --configuration Release
+          -p:Version=${{ steps.ver.outputs.version }}
+          --output nupkgs
+
+      - name: Push to NuGet
+        run: >
+          dotnet nuget push "nupkgs/*.nupkg"
+          --api-key ${{ secrets.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate

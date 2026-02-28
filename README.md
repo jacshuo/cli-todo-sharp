@@ -1,6 +1,8 @@
 # cli-todo-sharp
 
 [![CI](https://github.com/jacshuo/cli-todo-sharp/actions/workflows/ci.yml/badge.svg)](https://github.com/jacshuo/cli-todo-sharp/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/v/CliTodoSharp.svg)](https://www.nuget.org/packages/CliTodoSharp)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/CliTodoSharp.svg)](https://www.nuget.org/packages/CliTodoSharp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com)
 
