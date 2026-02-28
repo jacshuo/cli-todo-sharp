@@ -125,10 +125,21 @@ jobs:
           VERSION="${BASE}-ci.${DATE}.${SHORT_SHA}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
+      # For PackAsTool exe projects the SDK runs an internal publish during
+      # 'dotnet pack', which requires build artifacts to already exist.
+      # Running restore → build → pack --no-build avoids the clean-tree failure.
+      - name: Build (for pack)
+        run: >
+          dotnet build src/CliTodoSharp/CliTodoSharp.csproj
+          --configuration Release
+          -p:Version=${{ steps.ver.outputs.version }}
+
       - name: Pack
         run: >
           dotnet pack src/CliTodoSharp/CliTodoSharp.csproj
           --configuration Release
+          --no-build
+          --no-restore
           -p:Version=${{ steps.ver.outputs.version }}
           --output nupkgs
 

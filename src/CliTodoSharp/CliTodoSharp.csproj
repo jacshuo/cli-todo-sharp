@@ -24,11 +24,6 @@
     <ToolCommandName>todo</ToolCommandName>
     <PackageTags>todo;cli;task-manager;productivity</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <!--
-      Produce a .nupkg on every 'dotnet build' so the package is always
-      available alongside the regular build output.
-    -->
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <!-- Include the repo README as the NuGet package readme -->

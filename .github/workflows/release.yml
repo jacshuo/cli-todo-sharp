@@ -259,10 +259,25 @@ jobs:
           fi
 
       # ── Pack NuGet and push ───────────────────────────────────────────────
+      # For PackAsTool exe projects the SDK runs an internal publish during
+      # 'dotnet pack', which requires build artifacts to already exist.
+      # Running restore → build → pack --no-build avoids the clean-tree failure.
+      - name: Restore
+        run: dotnet restore src/CliTodoSharp/CliTodoSharp.csproj
+
+      - name: Build (for pack)
+        run: >
+          dotnet build src/CliTodoSharp/CliTodoSharp.csproj
+          --configuration Release
+          --no-restore
+          -p:Version=${{ needs.prepare.outputs.version }}
+
       - name: Pack NuGet
         run: >
           dotnet pack src/CliTodoSharp/CliTodoSharp.csproj
           --configuration Release
+          --no-build
+          --no-restore
           -p:Version=${{ needs.prepare.outputs.version }}
           --output nupkgs
 
