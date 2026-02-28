@@ -282,11 +282,14 @@ jobs:
           --output nupkgs
 
       - name: Push to NuGet
-        run: >
-          dotnet nuget push "nupkgs/*.nupkg"
-          --api-key ${{ secrets.NUGET_API_KEY }}
-          --source https://api.nuget.org/v3/index.json
-          --skip-duplicate
+        if: ${{ secrets.NUGET_API_KEY != '' }}
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push "nupkgs/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
 
       # ── Publish the release ───────────────────────────────────────────────
       - name: Create GitHub release
