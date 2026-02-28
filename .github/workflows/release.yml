@@ -206,6 +206,8 @@ jobs:
     name: Create Release
     needs: [prepare, build]
     runs-on: ubuntu-latest
+    env:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
     steps:
       - name: Checkout (needed for CHANGELOG extraction)
@@ -282,9 +284,7 @@ jobs:
           --output nupkgs
 
       - name: Push to NuGet
-        if: ${{ secrets.NUGET_API_KEY != '' }}
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        if: env.NUGET_API_KEY != ''
         run: |
           dotnet nuget push "nupkgs/*.nupkg" \
             --api-key "$NUGET_API_KEY" \
